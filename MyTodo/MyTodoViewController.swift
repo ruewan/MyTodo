@@ -10,15 +10,13 @@ import UIKit
 
 class MyTodoViewController: UITableViewController {
     let ITEM_KEY = "items"
-    var items : [String] = []
-    let defaults = UserDefaults.standard
-    
-    
+    let DATA_FILE_PATH = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("items.plist")
+    var items : [Item] = []
+    let encoder = PropertyListEncoder()
+    let decoder = PropertyListDecoder()
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let storedItems = defaults.array(forKey: ITEM_KEY) as? [String]{
-            items = storedItems
-        }
+        loadItems()
         // Do any additional setup after loading the view.
     }
     
@@ -28,15 +26,18 @@ class MyTodoViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "MyTodoItemCell", for: indexPath)
-        cell.textLabel?.text = items[indexPath.row]
+        let item = items[indexPath.row]
+        cell.textLabel?.text = item.title
+        cell.accessoryType = item.done ? .checkmark : .none
         return cell
     }
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-//        print("selected \(items[indexPath.row])")
         if let cell = tableView.cellForRow(at: indexPath){
             cell.accessoryType = cell.accessoryType == .checkmark ? .none : .checkmark
+            items[indexPath.row].done = cell.accessoryType == .checkmark
         }
+        saveData()
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
@@ -45,8 +46,8 @@ class MyTodoViewController: UITableViewController {
         let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             if let text = textField.text {
-                self.items.append(text)
-                self.defaults.set(self.items, forKey: self.ITEM_KEY)
+                self.items.append(Item(title : text,done : false))
+                self.saveData()
                 self.tableView.reloadData()
             }
         }
@@ -57,6 +58,24 @@ class MyTodoViewController: UITableViewController {
             
         }
         present(alert, animated: true, completion: nil)
+    }
+    
+    func saveData(){
+        do{
+            let data = try encoder.encode(items)
+            try data.write(to: DATA_FILE_PATH!)
+        } catch {
+            print("Error encoding items \(error)")
+        }
+    }
+    func loadItems(){
+        if let data = try? Data(contentsOf: DATA_FILE_PATH!){
+            do {
+                items = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("error decoding items \(error)")
+            }
+        }
     }
 }
 
