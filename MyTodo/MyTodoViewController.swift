@@ -9,7 +9,7 @@
 import UIKit
 
 class MyTodoViewController: UITableViewController {
-    let items = ["Find Mike", "Buy Eggos", "Destroy Demogorgon"]
+    var items : [String] = []
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -33,5 +33,22 @@ class MyTodoViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
+    @IBAction func addButtonPress(_ sender: UIBarButtonItem) {
+        var textField = UITextField()
+        let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
+        let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
+            if let text = textField.text {
+                self.items.append(text)
+                self.tableView.reloadData()
+            }
+        }
+        alert.addAction(action)
+        alert.addTextField { (alertTextField) in
+            textField = alertTextField
+            alertTextField.placeholder = "Add new item";
+            
+        }
+        present(alert, animated: true, completion: nil)
+    }
 }
 
