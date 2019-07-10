@@ -9,9 +9,16 @@
 import UIKit
 
 class MyTodoViewController: UITableViewController {
+    let ITEM_KEY = "items"
     var items : [String] = []
+    let defaults = UserDefaults.standard
+    
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        if let storedItems = defaults.array(forKey: ITEM_KEY) as? [String]{
+            items = storedItems
+        }
         // Do any additional setup after loading the view.
     }
     
@@ -39,6 +46,7 @@ class MyTodoViewController: UITableViewController {
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             if let text = textField.text {
                 self.items.append(text)
+                self.defaults.set(self.items, forKey: self.ITEM_KEY)
                 self.tableView.reloadData()
             }
         }
