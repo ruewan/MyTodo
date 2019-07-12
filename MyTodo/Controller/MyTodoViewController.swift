@@ -7,26 +7,26 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 class MyTodoViewController: UITableViewController
 {
     
     @IBOutlet weak var searchBar: UISearchBar!
-    var items = [Item]()
-    var selectedCategory : ListCategory?{
+    var realm = try! Realm()
+    var items = List<Item>()
+    var selectedCategory : Category?{
         didSet{
             items = loadItems()
         }
     }
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
     override func viewDidLoad() {
         super.viewDidLoad()
-        searchBar.delegate = self
+//        searchBar.delegate = self
         definesPresentationContext = true
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return selectedCategory!.items!.count
+        return selectedCategory?.items.count ?? 0
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -40,9 +40,15 @@ class MyTodoViewController: UITableViewController
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let cell = tableView.cellForRow(at: indexPath){
             cell.accessoryType = cell.accessoryType == .checkmark ? .none : .checkmark
-            items[indexPath.row].done = cell.accessoryType == .checkmark
+            do{
+                try realm.write {
+                   items[indexPath.row].done = cell.accessoryType == .checkmark
+                }
+            } catch {
+                print("Error saving category \(error)")
+            }
+            
         }
-        saveData()
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
@@ -51,12 +57,10 @@ class MyTodoViewController: UITableViewController
         let alert = UIAlertController(title: "Add new item", message: "", preferredStyle: .alert)
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             if let text = textField.text {
-                let newItem = Item(context: self.context)
+                let newItem = Item()
                 newItem.title = text
                 newItem.done = false
-                newItem.parentCategory = self.selectedCategory!
-                self.items.append(newItem)
-                self.saveData()
+                self.addItem(item: newItem)
                 self.tableView.reloadData()
             }
         }
@@ -69,64 +73,56 @@ class MyTodoViewController: UITableViewController
         present(alert, animated: true, completion: nil)
     }
     
-    func saveData(){
+    func addItem(item : Item){
         do{
-            try context.save()
-        } catch {
-            print("Error saving items \(error)")
-        }
-    }
-    
-    func loadItems(with request: NSFetchRequest<Item> = Item.fetchRequest()) -> [Item]{
-        do{
-            var searchPredicate = NSPredicate(format: "parentCategory == %@", selectedCategory!)
-            if let predicate = request.predicate{
-                searchPredicate = NSCompoundPredicate(andPredicateWithSubpredicates: [predicate,searchPredicate])
+            try realm.write {
+                items.append(item)
             }
-            request.predicate = searchPredicate
-            return try context.fetch(request)
-        } catch{
-            print("Error loading data from context \(error)")
+        } catch {
+            print("Error saving category \(error)")
         }
-        return []
+    }
+    
+    func loadItems() -> List<Item>{
+       return selectedCategory!.items
     }
 
 }
 
-//Mark - Search Bar Methods
-extension MyTodoViewController: UISearchBarDelegate{
-    
-    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        if let searchText = searchBar.text{
-            let request : NSFetchRequest<Item> = Item.fetchRequest()
-            request.predicate = NSPredicate(format: "title CONTAINS[cd] %@ ", searchText )
-            request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
-            items = loadItems(with: request)
-            tableView.reloadData()
-        }
-    }
-    
-
-    
-    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
-        items = loadItems()
-        tableView.reloadData()
-        searchBar.text = nil
-        DispatchQueue.main.async {
-            searchBar.resignFirstResponder()
-        }
-    }
-    
-    //    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
-    //        print("in text changed")
-    //        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-    //        if(trimmed.count == 0){
-    //            items = loadItems()
-    //            tableView.reloadData()
-    //        }
-    //    }
-    
-    
-}
+////Mark - Search Bar Methods
+//extension MyTodoViewController: UISearchBarDelegate{
+//
+//    func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
+//        if let searchText = searchBar.text{
+//
+//            request.predicate = NSPredicate(format: "title CONTAINS[cd] %@ ", searchText )
+//            request.sortDescriptors = [NSSortDescriptor(key: "title", ascending: true)]
+//            items = loadItems(with: request)
+//            tableView.reloadData()
+//        }
+//    }
+//
+//
+//
+//    func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
+//        items = loadItems()
+//        tableView.reloadData()
+//        searchBar.text = nil
+//        DispatchQueue.main.async {
+//            searchBar.resignFirstResponder()
+//        }
+//    }
+//
+//    //    func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
+//    //        print("in text changed")
+//    //        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+//    //        if(trimmed.count == 0){
+//    //            items = loadItems()
+//    //            tableView.reloadData()
+//    //        }
+//    //    }
+//
+//
+//}
 
 
