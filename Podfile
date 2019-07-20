@@ -8,6 +8,7 @@ target 'MyTodo' do
   # Pods for MyTodo
   pod 'RealmSwift'
   pod 'SwipeCellKit'
+  pod 'ChameleonFramework/Swift'
   target 'MyTodoTests' do
     inherit! :search_paths
     # Pods for testing

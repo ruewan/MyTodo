@@ -8,6 +8,7 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 class MyTodoViewController: SwipeTableViewController
 {
     
@@ -33,6 +34,8 @@ class MyTodoViewController: SwipeTableViewController
         let cell = super.tableView(tableView, cellForRowAt: indexPath)
         let item = items[indexPath.row]
         cell.textLabel?.text = item.title
+        cell.backgroundColor = getCellColor(row: indexPath.row)
+        cell.textLabel?.textColor = ContrastColorOf(backgroundColor: cell.backgroundColor!, returnFlat: true)
         cell.accessoryType = item.done ? .checkmark : .none
         return cell
     }
@@ -132,6 +135,14 @@ extension MyTodoViewController: UISearchBarDelegate{
         }
     }
     
+    func getCellColor(row: Int) -> UIColor{
+        if( row == 0 ){
+            return UIColor(hexString: selectedCategory!.color)
+        }else{
+            let percent = (0.5 / CGFloat(items.count)) * CGFloat(row + 1)
+            return UIColor(hexString:selectedCategory!.color).darken(byPercentage: percent)
+        }
+    }
 
 }
 
