@@ -11,7 +11,7 @@ import RealmSwift
 import ChameleonFramework
 class MyTodoViewController: SwipeTableViewController
 {
-    
+    var originalColor :UIColor?
     @IBOutlet weak var searchBar: UISearchBar!
     var realm = try! Realm()
     var items = List<Item>()
@@ -20,12 +20,39 @@ class MyTodoViewController: SwipeTableViewController
             items = loadItems()
         }
     }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        tableView.separatorStyle = .none
         searchBar.delegate = self
         definesPresentationContext = true
+        
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        let tintColor = UIColor(hexString: selectedCategory?.color)!
+        title = selectedCategory?.name
+        searchBar.barTintColor = tintColor
+        originalColor = navigationController?.navigationBar.barTintColor
+        navBarSetup(color: tintColor)
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        if let color = originalColor{
+            navBarSetup(color: color)
+        }
+    }
+    //MARK: - NavBarSetup
+    func navBarSetup(color : UIColor){
+        let contrastColor =  ContrastColorOf(backgroundColor: color, returnFlat: true)
+        title = selectedCategory?.name
+        searchBar.barTintColor = color
+        if let navBar = navigationController?.navigationBar {
+            navBar.barTintColor = color
+            navBar.tintColor = contrastColor
+            navBar.largeTitleTextAttributes = [NSAttributedString.Key.foregroundColor : contrastColor]
+        }
+    }
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return items.count
     }
